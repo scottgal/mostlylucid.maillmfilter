@@ -48,6 +48,7 @@ public partial class App : Application
 
                 // ViewModels
                 services.AddTransient<MainViewModel>();
+                services.AddTransient<TemplateTestViewModel>();
 
                 // Logging
                 services.AddLogging(logging =>

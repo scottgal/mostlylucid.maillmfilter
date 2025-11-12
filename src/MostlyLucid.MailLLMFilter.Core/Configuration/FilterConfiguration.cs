@@ -24,6 +24,11 @@ public class FilterConfiguration
     /// Auto-reply templates for filtered messages
     /// </summary>
     public List<AutoReplyTemplate> AutoReplyTemplates { get; set; } = new();
+
+    /// <summary>
+    /// LLM filter templates for reusable analysis strategies
+    /// </summary>
+    public List<LlmFilterTemplate> LlmFilterTemplates { get; set; } = new();
 }
 
 /// <summary>
@@ -129,9 +134,14 @@ public class FilterRule
     public string? AutoReplyTemplateId { get; set; }
 
     /// <summary>
-    /// LLM prompt template for analyzing this rule
+    /// LLM prompt template for analyzing this rule (deprecated - use LlmFilterTemplateId)
     /// </summary>
     public string? CustomPrompt { get; set; }
+
+    /// <summary>
+    /// ID of LLM filter template to use for analysis
+    /// </summary>
+    public string? LlmFilterTemplateId { get; set; }
 }
 
 /// <summary>
@@ -189,4 +199,102 @@ public class AutoReplyTemplate
     /// Whether to include original message in reply
     /// </summary>
     public bool IncludeOriginal { get; set; } = false;
+}
+
+/// <summary>
+/// LLM filter template defining a reusable analysis strategy
+/// </summary>
+public class LlmFilterTemplate
+{
+    /// <summary>
+    /// Template identifier
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Template name
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Description of what this template analyzes
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Custom LLM model to use (overrides global setting if specified)
+    /// </summary>
+    public string? Model { get; set; }
+
+    /// <summary>
+    /// Custom temperature (overrides global setting if specified)
+    /// </summary>
+    public float? Temperature { get; set; }
+
+    /// <summary>
+    /// Custom max tokens (overrides global setting if specified)
+    /// </summary>
+    public int? MaxTokens { get; set; }
+
+    /// <summary>
+    /// System prompt that defines the LLM's role and analysis approach
+    /// </summary>
+    public string SystemPrompt { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Prompt template for analyzing emails (supports placeholders)
+    /// Available placeholders: {from}, {subject}, {body}, {keywords}, {topics}, {mentions}
+    /// </summary>
+    public string PromptTemplate { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Expected output format description for the LLM
+    /// </summary>
+    public string OutputFormat { get; set; } = "JSON with: match (bool), confidence (0.0-1.0), reason (string), topics (array), mentions (array)";
+
+    /// <summary>
+    /// Examples to guide the LLM's analysis (few-shot learning)
+    /// </summary>
+    public List<LlmFilterExample> Examples { get; set; } = new();
+
+    /// <summary>
+    /// Whether this template requires keyword context
+    /// </summary>
+    public bool RequiresKeywords { get; set; } = true;
+
+    /// <summary>
+    /// Whether this template requires topic context
+    /// </summary>
+    public bool RequiresTopics { get; set; } = true;
+
+    /// <summary>
+    /// Whether this template requires mention context
+    /// </summary>
+    public bool RequiresMentions { get; set; } = true;
+}
+
+/// <summary>
+/// Example for few-shot learning in LLM filter templates
+/// </summary>
+public class LlmFilterExample
+{
+    /// <summary>
+    /// Example email subject
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Example email body excerpt
+    /// </summary>
+    public string Body { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Expected analysis result
+    /// </summary>
+    public string ExpectedResult { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Explanation of why this is the expected result
+    /// </summary>
+    public string Explanation { get; set; } = string.Empty;
 }

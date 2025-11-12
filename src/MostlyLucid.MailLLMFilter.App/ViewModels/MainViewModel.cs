@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MostlyLucid.MailLLMFilter.Core.Models;
 using MostlyLucid.MailLLMFilter.Core.Services;
@@ -15,6 +16,7 @@ public partial class MainViewModel : ObservableObject
     private readonly ILlmService _llmService;
     private readonly IFilterEngine _filterEngine;
     private readonly NotificationService _notificationService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MainViewModel> _logger;
 
     private System.Threading.Timer? _autoCheckTimer;
@@ -45,12 +47,14 @@ public partial class MainViewModel : ObservableObject
         ILlmService llmService,
         IFilterEngine filterEngine,
         NotificationService notificationService,
+        IServiceProvider serviceProvider,
         ILogger<MainViewModel> logger)
     {
         _gmailService = gmailService;
         _llmService = llmService;
         _filterEngine = filterEngine;
         _notificationService = notificationService;
+        _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
@@ -149,6 +153,25 @@ public partial class MainViewModel : ObservableObject
     {
         // TODO: Open settings window
         MessageBox.Show("Settings window not yet implemented", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    [RelayCommand]
+    private void OpenTemplateTester()
+    {
+        try
+        {
+            var viewModel = _serviceProvider.GetRequiredService<TemplateTestViewModel>();
+            var testerWindow = new Views.TemplateTestWindow
+            {
+                DataContext = viewModel
+            };
+            testerWindow.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error opening template tester");
+            MessageBox.Show($"Error opening template tester:\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private bool CanProcessMessages() => IsConnected && !IsProcessing;

@@ -14,12 +14,14 @@ namespace MostlyLucid.MailLLMFilter.Core.Services;
 /// </summary>
 public class OllamaLlmService : ILlmService
 {
+    private readonly FilterConfiguration _config;
     private readonly OllamaSettings _settings;
     private readonly ILogger<OllamaLlmService> _logger;
     private readonly OllamaApiClient _client;
 
     public OllamaLlmService(IOptions<FilterConfiguration> config, ILogger<OllamaLlmService> logger)
     {
+        _config = config.Value;
         _settings = config.Value.Ollama;
         _logger = logger;
         _client = new OllamaApiClient(_settings.Endpoint, _settings.Model);
@@ -29,17 +31,36 @@ public class OllamaLlmService : ILlmService
     {
         try
         {
-            var prompt = BuildPrompt(message, rule);
+            // Get LLM filter template if specified
+            LlmFilterTemplate? template = null;
+            if (!string.IsNullOrWhiteSpace(rule.LlmFilterTemplateId))
+            {
+                template = _config.LlmFilterTemplates.FirstOrDefault(t => t.Id == rule.LlmFilterTemplateId);
+                if (template != null)
+                {
+                    _logger.LogDebug("Using LLM template {TemplateId} for rule {RuleName}", template.Id, rule.Name);
+                }
+            }
+
+            var prompt = template != null
+                ? BuildPromptFromTemplate(message, rule, template)
+                : BuildPrompt(message, rule);
+
             _logger.LogDebug("Analyzing email {MessageId} with rule {RuleName}", message.Id, rule.Name);
+
+            // Use template settings if available, otherwise use global settings
+            var model = template?.Model ?? _settings.Model;
+            var temperature = template?.Temperature ?? _settings.Temperature;
+            var maxTokens = template?.MaxTokens ?? _settings.MaxTokens;
 
             var response = await _client.Generate(new GenerateRequest
             {
                 Prompt = prompt,
-                Model = _settings.Model,
+                Model = model,
                 Options = new OllamaSharp.Models.RequestOptions
                 {
-                    Temperature = _settings.Temperature,
-                    NumPredict = _settings.MaxTokens
+                    Temperature = temperature,
+                    NumPredict = maxTokens
                 }
             }, cancellationToken);
 
@@ -73,6 +94,48 @@ public class OllamaLlmService : ILlmService
         {
             _logger.LogWarning(ex, "Ollama service not available");
             return false;
+        }
+    }
+
+    public async Task<LlmAnalysisResult> TestTemplateAsync(EmailMessage message, LlmFilterTemplate template, FilterRule rule, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var prompt = BuildPromptFromTemplate(message, rule, template);
+            _logger.LogInformation("Testing LLM template {TemplateId} with sample email", template.Id);
+
+            // Use template settings if available, otherwise use global settings
+            var model = template.Model ?? _settings.Model;
+            var temperature = template.Temperature ?? _settings.Temperature;
+            var maxTokens = template.MaxTokens ?? _settings.MaxTokens;
+
+            var response = await _client.Generate(new GenerateRequest
+            {
+                Prompt = prompt,
+                Model = model,
+                Options = new OllamaSharp.Models.RequestOptions
+                {
+                    Temperature = temperature,
+                    NumPredict = maxTokens
+                }
+            }, cancellationToken);
+
+            var fullResponse = response?.Response ?? string.Empty;
+
+            _logger.LogDebug("LLM Test Response: {Response}", fullResponse);
+
+            return ParseLlmResponse(fullResponse, message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error testing LLM template");
+            return new LlmAnalysisResult
+            {
+                IsMatch = false,
+                Confidence = 0,
+                Reason = $"Error: {ex.Message}",
+                FullResponse = string.Empty
+            };
         }
     }
 
@@ -120,6 +183,59 @@ public class OllamaLlmService : ILlmService
         sb.AppendLine("  \"topics\": [\"detected\", \"topics\"],");
         sb.AppendLine("  \"mentions\": [\"detected\", \"mentions\"]");
         sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private string BuildPromptFromTemplate(EmailMessage message, FilterRule rule, LlmFilterTemplate template)
+    {
+        var sb = new StringBuilder();
+
+        // Add system prompt if provided
+        if (!string.IsNullOrWhiteSpace(template.SystemPrompt))
+        {
+            sb.AppendLine(template.SystemPrompt);
+            sb.AppendLine();
+        }
+
+        // Add few-shot examples if provided
+        if (template.Examples.Any())
+        {
+            sb.AppendLine("EXAMPLES:");
+            foreach (var example in template.Examples)
+            {
+                sb.AppendLine($"Example Subject: {example.Subject}");
+                sb.AppendLine($"Example Body: {example.Body}");
+                sb.AppendLine($"Expected Result: {example.ExpectedResult}");
+                sb.AppendLine($"Explanation: {example.Explanation}");
+                sb.AppendLine();
+            }
+        }
+
+        // Build prompt from template with placeholder replacement
+        var promptText = template.PromptTemplate
+            .Replace("{from}", message.FromName ?? message.From)
+            .Replace("{subject}", message.Subject)
+            .Replace("{body}", TruncateBody(message.Body, 1000))
+            .Replace("{keywords}", template.RequiresKeywords && rule.Keywords.Any()
+                ? string.Join(", ", rule.Keywords)
+                : "None")
+            .Replace("{topics}", template.RequiresTopics && rule.Topics.Any()
+                ? string.Join(", ", rule.Topics)
+                : "None")
+            .Replace("{mentions}", template.RequiresMentions && rule.Mentions.Any()
+                ? string.Join(", ", rule.Mentions)
+                : "None");
+
+        sb.AppendLine(promptText);
+        sb.AppendLine();
+
+        // Add output format
+        if (!string.IsNullOrWhiteSpace(template.OutputFormat))
+        {
+            sb.AppendLine("RESPONSE FORMAT:");
+            sb.AppendLine(template.OutputFormat);
+        }
 
         return sb.ToString();
     }

@@ -38,6 +38,10 @@
                             Command="{Binding ProcessMessagesCommand}"
                             Background="#FF9800"/>
 
+                    <Button Content="Test Templates"
+                            Command="{Binding OpenTemplateTesterCommand}"
+                            Background="#00BCD4"/>
+
                     <Button Content="Settings"
                             Command="{Binding OpenSettingsCommand}"
                             Background="#9C27B0"/>
