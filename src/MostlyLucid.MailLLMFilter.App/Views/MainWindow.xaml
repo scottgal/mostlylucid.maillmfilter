@@ -1,0 +1,199 @@
+<Window x:Class="MostlyLucid.MailLLMFilter.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="MostlyLucid Mail LLM Filter"
+        Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header / Control Panel -->
+        <Border Grid.Row="0"
+                Background="#2196F3"
+                Padding="15"
+                CornerRadius="5"
+                Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="Connect to Gmail"
+                            Command="{Binding ConnectCommand}"
+                            IsEnabled="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}"
+                            Background="#4CAF50"/>
+
+                    <Button Content="Process Messages"
+                            Command="{Binding ProcessMessagesCommand}"
+                            Background="#FF9800"/>
+
+                    <Button Content="Test Templates"
+                            Command="{Binding OpenTemplateTesterCommand}"
+                            Background="#00BCD4"/>
+
+                    <Button Content="Settings"
+                            Command="{Binding OpenSettingsCommand}"
+                            Background="#9C27B0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <CheckBox Content="Auto-check"
+                              IsChecked="{Binding AutoCheckEnabled}"
+                              Command="{Binding ToggleAutoCheckCommand}"
+                              Foreground="White"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0"/>
+
+                    <TextBlock Text="Interval (sec):"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               Margin="0,0,5,0"/>
+
+                    <TextBox Text="{Binding AutoCheckInterval, UpdateSourceTrigger=PropertyChanged}"
+                             Width="60"
+                             VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Results List -->
+            <Border Grid.Column="0"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    CornerRadius="5"
+                    Padding="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Filter Results"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="5"/>
+
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding FilterResults}"
+                              SelectedItem="{Binding SelectedResult}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              CanUserResizeRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Status"
+                                                Binding="{Binding Status}"
+                                                Width="120"/>
+                            <DataGridTextColumn Header="From"
+                                                Binding="{Binding From}"
+                                                Width="200"/>
+                            <DataGridTextColumn Header="Subject"
+                                                Binding="{Binding Subject}"
+                                                Width="*"/>
+                            <DataGridTextColumn Header="Rule"
+                                                Binding="{Binding RuleName}"
+                                                Width="120"/>
+                            <DataGridTextColumn Header="Action"
+                                                Binding="{Binding Action}"
+                                                Width="150"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1"
+                          HorizontalAlignment="Stretch"
+                          Background="#CCCCCC"/>
+
+            <!-- Details Panel -->
+            <Border Grid.Column="2"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    CornerRadius="5"
+                    Padding="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Message Details"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,10"/>
+
+                        <TextBlock Text="{Binding SelectedResult.Result.Message.Subject, StringFormat='Subject: {0}'}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5"/>
+
+                        <TextBlock Text="{Binding SelectedResult.Result.Message.From, StringFormat='From: {0}'}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5"/>
+
+                        <TextBlock Text="{Binding SelectedResult.Result.Reason, StringFormat='Reason: {0}'}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,10,0,5"/>
+
+                        <TextBlock Text="LLM Analysis:"
+                                   FontWeight="Bold"
+                                   Margin="0,10,0,5"/>
+
+                        <TextBlock Text="{Binding SelectedResult.Result.LlmAnalysis}"
+                                   TextWrapping="Wrap"
+                                   Background="#F5F5F5"
+                                   Padding="10"
+                                   FontFamily="Consolas"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2"
+                Background="#EEEEEE"
+                Padding="10"
+                CornerRadius="5"
+                Margin="0,10,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"/>
+
+                <ProgressBar Grid.Column="2"
+                             Width="150"
+                             Height="20"
+                             IsIndeterminate="True"
+                             Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            </Grid>
+        </Border>
+    </Grid>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+    </Window.Resources>
+</Window>
