@@ -6,6 +6,11 @@ namespace MostlyLucid.MailLLMFilter.Core.Configuration;
 public class FilterConfiguration
 {
     /// <summary>
+    /// Email provider type: "Gmail" or "IMAP"
+    /// </summary>
+    public string EmailProvider { get; set; } = "Gmail";
+
+    /// <summary>
     /// Ollama service settings
     /// </summary>
     public OllamaSettings Ollama { get; set; } = new();
@@ -14,6 +19,11 @@ public class FilterConfiguration
     /// Gmail service settings
     /// </summary>
     public GmailSettings Gmail { get; set; } = new();
+
+    /// <summary>
+    /// IMAP service settings
+    /// </summary>
+    public ImapSettings Imap { get; set; } = new();
 
     /// <summary>
     /// Filter rules for processing emails
@@ -71,6 +81,87 @@ public class GmailSettings
     /// Gmail label to move filtered messages to (null = delete)
     /// </summary>
     public string? FilteredLabel { get; set; } = "Filtered";
+
+    /// <summary>
+    /// How often to check for new messages (in seconds)
+    /// </summary>
+    public int CheckIntervalSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Maximum messages to process per check
+    /// </summary>
+    public int MaxMessagesPerCheck { get; set; } = 50;
+}
+
+/// <summary>
+/// IMAP service settings
+/// </summary>
+public class ImapSettings
+{
+    /// <summary>
+    /// IMAP server hostname (e.g., imap.gmail.com, outlook.office365.com)
+    /// </summary>
+    public string Server { get; set; } = "imap.gmail.com";
+
+    /// <summary>
+    /// IMAP server port (default: 993 for SSL)
+    /// </summary>
+    public int Port { get; set; } = 993;
+
+    /// <summary>
+    /// Use SSL/TLS connection
+    /// </summary>
+    public bool UseSsl { get; set; } = true;
+
+    /// <summary>
+    /// Email account username
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Email account password or app-specific password
+    /// </summary>
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// SMTP server hostname for sending replies (e.g., smtp.gmail.com)
+    /// </summary>
+    public string SmtpServer { get; set; } = "smtp.gmail.com";
+
+    /// <summary>
+    /// SMTP server port (default: 587 for TLS, 465 for SSL)
+    /// </summary>
+    public int SmtpPort { get; set; } = 587;
+
+    /// <summary>
+    /// Use SSL for SMTP (true for port 465, false for port 587 with STARTTLS)
+    /// </summary>
+    public bool SmtpUseSsl { get; set; } = false;
+
+    /// <summary>
+    /// Inbox folder name (default: INBOX)
+    /// </summary>
+    public string InboxFolder { get; set; } = "INBOX";
+
+    /// <summary>
+    /// Spam folder name (default: [Gmail]/Spam or Junk)
+    /// </summary>
+    public string SpamFolder { get; set; } = "[Gmail]/Spam";
+
+    /// <summary>
+    /// Trash folder name (default: [Gmail]/Trash or Trash)
+    /// </summary>
+    public string TrashFolder { get; set; } = "[Gmail]/Trash";
+
+    /// <summary>
+    /// Archive folder name (default: [Gmail]/All Mail or Archive)
+    /// </summary>
+    public string ArchiveFolder { get; set; } = "[Gmail]/All Mail";
+
+    /// <summary>
+    /// Folder to move filtered messages to
+    /// </summary>
+    public string? FilteredFolder { get; set; } = "Filtered";
 
     /// <summary>
     /// How often to check for new messages (in seconds)
@@ -167,7 +258,12 @@ public enum FilterAction
     /// <summary>
     /// Archive the message
     /// </summary>
-    Archive
+    Archive,
+
+    /// <summary>
+    /// Mark as spam
+    /// </summary>
+    MarkAsSpam
 }
 
 /// <summary>

@@ -12,7 +12,7 @@ namespace MostlyLucid.MailLLMFilter.App.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    private readonly IGmailService _gmailService;
+    private readonly IEmailService _emailService;
     private readonly ILlmService _llmService;
     private readonly IFilterEngine _filterEngine;
     private readonly NotificationService _notificationService;
@@ -43,14 +43,14 @@ public partial class MainViewModel : ObservableObject
     private FilterResultViewModel? _selectedResult;
 
     public MainViewModel(
-        IGmailService gmailService,
+        IEmailService emailService,
         ILlmService llmService,
         IFilterEngine filterEngine,
         NotificationService notificationService,
         IServiceProvider serviceProvider,
         ILogger<MainViewModel> logger)
     {
-        _gmailService = gmailService;
+        _emailService = emailService;
         _llmService = llmService;
         _filterEngine = filterEngine;
         _notificationService = notificationService;
@@ -64,21 +64,21 @@ public partial class MainViewModel : ObservableObject
         try
         {
             IsProcessing = true;
-            StatusMessage = "Connecting to Gmail...";
+            StatusMessage = $"Connecting to {_emailService.ProviderName}...";
 
-            await _gmailService.InitializeAsync();
+            await _emailService.InitializeAsync();
 
             IsConnected = true;
-            StatusMessage = "Connected to Gmail";
+            StatusMessage = $"Connected to {_emailService.ProviderName}";
 
-            _notificationService.ShowInfoNotification("Gmail Connected", "Successfully connected to Gmail");
-            _logger.LogInformation("Successfully connected to Gmail");
+            _notificationService.ShowInfoNotification($"{_emailService.ProviderName} Connected", $"Successfully connected to {_emailService.ProviderName}");
+            _logger.LogInformation("Successfully connected to {Provider}", _emailService.ProviderName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to connect to Gmail");
+            _logger.LogError(ex, "Failed to connect to {Provider}", _emailService.ProviderName);
             StatusMessage = $"Connection failed: {ex.Message}";
-            MessageBox.Show($"Failed to connect to Gmail:\n\n{ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Failed to connect to {_emailService.ProviderName}:\n\n{ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
