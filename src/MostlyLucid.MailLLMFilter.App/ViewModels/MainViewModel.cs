@@ -151,8 +151,21 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void OpenSettings()
     {
-        // TODO: Open settings window
-        MessageBox.Show("Settings window not yet implemented", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+        try
+        {
+            var viewModel = _serviceProvider.GetRequiredService<SettingsViewModel>();
+            var settingsWindow = new Views.SettingsWindow
+            {
+                DataContext = viewModel,
+                Owner = Application.Current.MainWindow
+            };
+            settingsWindow.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error opening settings window");
+            MessageBox.Show($"Error opening settings window:\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     [RelayCommand]
