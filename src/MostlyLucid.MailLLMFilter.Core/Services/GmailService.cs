@@ -15,7 +15,7 @@ namespace MostlyLucid.MailLLMFilter.Core.Services;
 /// <summary>
 /// Gmail API service implementation
 /// </summary>
-public class GmailService : IGmailService
+public class GmailService : IGmailService, IEmailService
 {
     private readonly GmailSettings _settings;
     private readonly ILogger<GmailService> _logger;
@@ -28,6 +28,8 @@ public class GmailService : IGmailService
     };
 
     public bool IsAuthenticated => _credential != null && _service != null;
+
+    public string ProviderName => "Gmail";
 
     public GmailService(IOptions<FilterConfiguration> config, ILogger<GmailService> logger)
     {
@@ -112,6 +114,11 @@ public class GmailService : IGmailService
             _logger.LogError(ex, "Error retrieving unread messages");
             throw;
         }
+    }
+
+    public async Task MoveToFolderAsync(string messageId, string folderName, CancellationToken cancellationToken = default)
+    {
+        await MoveToLabelAsync(messageId, folderName, cancellationToken);
     }
 
     public async Task MoveToLabelAsync(string messageId, string labelName, CancellationToken cancellationToken = default)
@@ -238,6 +245,29 @@ public class GmailService : IGmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending reply");
+            throw;
+        }
+    }
+
+    public async Task MarkAsSpamAsync(string messageId, CancellationToken cancellationToken = default)
+    {
+        if (_service == null)
+            throw new InvalidOperationException("Gmail service not initialized");
+
+        try
+        {
+            var modifyRequest = new ModifyMessageRequest
+            {
+                AddLabelIds = new List<string> { "SPAM" },
+                RemoveLabelIds = new List<string> { "INBOX", "UNREAD" }
+            };
+
+            await _service.Users.Messages.Modify(modifyRequest, "me", messageId).ExecuteAsync(cancellationToken);
+            _logger.LogInformation("Marked message {MessageId} as spam", messageId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking message as spam");
             throw;
         }
     }

@@ -40,8 +40,25 @@ public partial class App : Application
 
                 // Core services
                 services.AddSingleton<ILlmService, OllamaLlmService>();
-                services.AddSingleton<IGmailService, Core.Services.GmailService>();
+
+                // Email service - register based on configuration
+                var filterConfig = context.Configuration.GetSection("FilterConfiguration").Get<FilterConfiguration>();
+                var emailProvider = filterConfig?.EmailProvider?.ToLowerInvariant() ?? "gmail";
+
+                if (emailProvider == "imap")
+                {
+                    services.AddSingleton<IEmailService, ImapEmailService>();
+                }
+                else
+                {
+                    // Default to Gmail
+                    services.AddSingleton<Core.Services.GmailService>();
+                    services.AddSingleton<IGmailService>(sp => sp.GetRequiredService<Core.Services.GmailService>());
+                    services.AddSingleton<IEmailService>(sp => sp.GetRequiredService<Core.Services.GmailService>());
+                }
+
                 services.AddSingleton<IFilterEngine, FilterEngine>();
+                services.AddSingleton<IEmailSummarizerService, EmailSummarizerService>();
 
                 // App services
                 services.AddSingleton<NotificationService>();

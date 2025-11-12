@@ -12,18 +12,18 @@ public class FilterEngine : IFilterEngine
 {
     private readonly FilterConfiguration _config;
     private readonly ILlmService _llmService;
-    private readonly IGmailService _gmailService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<FilterEngine> _logger;
 
     public FilterEngine(
         IOptions<FilterConfiguration> config,
         ILlmService llmService,
-        IGmailService gmailService,
+        IEmailService emailService,
         ILogger<FilterEngine> logger)
     {
         _config = config.Value;
         _llmService = llmService;
-        _gmailService = gmailService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -95,13 +95,13 @@ public class FilterEngine : IFilterEngine
 
         try
         {
-            if (!_gmailService.IsAuthenticated)
+            if (!_emailService.IsAuthenticated)
             {
                 _logger.LogWarning("Gmail service not authenticated");
                 return results;
             }
 
-            var messages = await _gmailService.GetUnreadMessagesAsync(
+            var messages = await _emailService.GetUnreadMessagesAsync(
                 _config.Gmail.MaxMessagesPerCheck,
                 cancellationToken);
 
@@ -180,27 +180,33 @@ public class FilterEngine : IFilterEngine
             {
                 case FilterAction.MoveToFolder:
                     var targetFolder = rule.TargetFolder ?? _config.Gmail.FilteredLabel ?? "Filtered";
-                    await _gmailService.MoveToLabelAsync(message.Id, targetFolder, cancellationToken);
+                    await _emailService.MoveToFolderAsync(message.Id, targetFolder, cancellationToken);
                     result.ActionTaken = true;
                     result.ActionDescription = $"Moved to folder: {targetFolder}";
                     break;
 
                 case FilterAction.Delete:
-                    await _gmailService.DeleteMessageAsync(message.Id, cancellationToken);
+                    await _emailService.DeleteMessageAsync(message.Id, cancellationToken);
                     result.ActionTaken = true;
                     result.ActionDescription = "Deleted message";
                     break;
 
                 case FilterAction.MarkAsRead:
-                    await _gmailService.MarkAsReadAsync(message.Id, cancellationToken);
+                    await _emailService.MarkAsReadAsync(message.Id, cancellationToken);
                     result.ActionTaken = true;
                     result.ActionDescription = "Marked as read";
                     break;
 
                 case FilterAction.Archive:
-                    await _gmailService.ArchiveMessageAsync(message.Id, cancellationToken);
+                    await _emailService.ArchiveMessageAsync(message.Id, cancellationToken);
                     result.ActionTaken = true;
                     result.ActionDescription = "Archived";
+                    break;
+
+                case FilterAction.MarkAsSpam:
+                    await _emailService.MarkAsSpamAsync(message.Id, cancellationToken);
+                    result.ActionTaken = true;
+                    result.ActionDescription = "Marked as spam";
                     break;
             }
 
@@ -246,7 +252,7 @@ public class FilterEngine : IFilterEngine
             body += "\n\n--- Original Message ---\n" + message.Body;
         }
 
-        await _gmailService.SendReplyAsync(message.Id, subject, body, cancellationToken);
+        await _emailService.SendReplyAsync(message.Id, subject, body, cancellationToken);
         _logger.LogInformation("Sent auto-reply to {From} using template {TemplateId}", message.From, templateId);
     }
 }
