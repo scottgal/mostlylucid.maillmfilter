@@ -5,10 +5,60 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="MostlyLucid Mail LLM Filter"
-        Height="700" Width="1200"
-        WindowStartupLocation="CenterScreen">
+        Height="750" Width="1400"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
 
-    <Grid Margin="10">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+
+        <!-- Modern Button Style with Windows Theme -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HotTrackBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Accent Button Style -->
+        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HotTrackBrushKey}}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -17,10 +67,15 @@
 
         <!-- Header / Control Panel -->
         <Border Grid.Row="0"
-                Background="#2196F3"
+                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                BorderThickness="1"
                 Padding="15"
-                CornerRadius="5"
-                Margin="0,0,0,10">
+                CornerRadius="8"
+                Margin="0,0,0,15">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.2"/>
+            </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -29,40 +84,51 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Content="Connect to Gmail"
+                    <Button Content="🔗 Connect"
                             Command="{Binding ConnectCommand}"
                             IsEnabled="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}"
-                            Background="#4CAF50"/>
+                            Style="{StaticResource AccentButton}"
+                            ToolTip="Connect to email service"/>
 
-                    <Button Content="Process Messages"
+                    <Button Content="▶ Process"
                             Command="{Binding ProcessMessagesCommand}"
-                            Background="#FF9800"/>
+                            Style="{StaticResource ModernButton}"
+                            ToolTip="Process unread messages"/>
 
-                    <Button Content="Test Templates"
+                    <Button Content="🧪 Test"
                             Command="{Binding OpenTemplateTesterCommand}"
-                            Background="#00BCD4"/>
+                            Style="{StaticResource ModernButton}"
+                            ToolTip="Test filter templates"/>
 
-                    <Button Content="Settings"
+                    <Button Content="⚙ Settings"
                             Command="{Binding OpenSettingsCommand}"
-                            Background="#9C27B0"/>
+                            Style="{StaticResource ModernButton}"
+                            ToolTip="Open configuration settings"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <CheckBox Content="Auto-check"
                               IsChecked="{Binding AutoCheckEnabled}"
                               Command="{Binding ToggleAutoCheckCommand}"
-                              Foreground="White"
+                              Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                               VerticalAlignment="Center"
-                              Margin="0,0,10,0"/>
+                              Margin="0,0,15,0"
+                              FontSize="13"/>
 
                     <TextBlock Text="Interval (sec):"
-                               Foreground="White"
+                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                                VerticalAlignment="Center"
-                               Margin="0,0,5,0"/>
+                               Margin="0,0,8,0"
+                               FontSize="13"/>
 
                     <TextBox Text="{Binding AutoCheckInterval, UpdateSourceTrigger=PropertyChanged}"
-                             Width="60"
-                             VerticalAlignment="Center"/>
+                             Width="70"
+                             Height="28"
+                             VerticalAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             Padding="5"
+                             BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                             Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -77,10 +143,14 @@
 
             <!-- Results List -->
             <Border Grid.Column="0"
-                    BorderBrush="#CCCCCC"
+                    Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                    BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
                     BorderThickness="1"
-                    CornerRadius="5"
-                    Padding="5">
+                    CornerRadius="8"
+                    Padding="10">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                </Border.Effect>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -88,10 +158,11 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0"
-                               Text="Filter Results"
-                               FontSize="16"
-                               FontWeight="Bold"
-                               Margin="5"/>
+                               Text="📬 Filter Results"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                               Margin="5,5,5,15"/>
 
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding FilterResults}"
@@ -101,20 +172,24 @@
                               SelectionMode="Single"
                               GridLinesVisibility="Horizontal"
                               HeadersVisibility="Column"
-                              CanUserResizeRows="False">
+                              CanUserResizeRows="False"
+                              Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                              RowBackground="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                              AlternatingRowBackground="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"
+                              BorderThickness="0">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Status"
                                                 Binding="{Binding Status}"
-                                                Width="120"/>
+                                                Width="130"/>
                             <DataGridTextColumn Header="From"
                                                 Binding="{Binding From}"
-                                                Width="200"/>
+                                                Width="220"/>
                             <DataGridTextColumn Header="Subject"
                                                 Binding="{Binding Subject}"
                                                 Width="*"/>
                             <DataGridTextColumn Header="Rule"
                                                 Binding="{Binding RuleName}"
-                                                Width="120"/>
+                                                Width="140"/>
                             <DataGridTextColumn Header="Action"
                                                 Binding="{Binding Action}"
                                                 Width="150"/>
@@ -125,42 +200,63 @@
 
             <GridSplitter Grid.Column="1"
                           HorizontalAlignment="Stretch"
-                          Background="#CCCCCC"/>
+                          Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                          ShowsPreview="True"/>
 
             <!-- Details Panel -->
             <Border Grid.Column="2"
-                    BorderBrush="#CCCCCC"
+                    Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                    BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
                     BorderThickness="1"
-                    CornerRadius="5"
-                    Padding="10">
+                    CornerRadius="8"
+                    Padding="15">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                </Border.Effect>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="Message Details"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Margin="0,0,0,10"/>
+                        <TextBlock Text="📄 Message Details"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                   Margin="0,0,0,15"/>
 
                         <TextBlock Text="{Binding SelectedResult.Result.Message.Subject, StringFormat='Subject: {0}'}"
                                    TextWrapping="Wrap"
+                                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                   FontSize="13"
                                    Margin="0,5"/>
 
                         <TextBlock Text="{Binding SelectedResult.Result.Message.From, StringFormat='From: {0}'}"
                                    TextWrapping="Wrap"
+                                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                   FontSize="13"
                                    Margin="0,5"/>
 
                         <TextBlock Text="{Binding SelectedResult.Result.Reason, StringFormat='Reason: {0}'}"
                                    TextWrapping="Wrap"
-                                   Margin="0,10,0,5"/>
+                                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                   FontSize="13"
+                                   Margin="0,15,0,5"
+                                   FontWeight="Medium"/>
 
-                        <TextBlock Text="LLM Analysis:"
-                                   FontWeight="Bold"
-                                   Margin="0,10,0,5"/>
+                        <TextBlock Text="🤖 LLM Analysis:"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                   Margin="0,15,0,8"/>
 
-                        <TextBlock Text="{Binding SelectedResult.Result.LlmAnalysis}"
-                                   TextWrapping="Wrap"
-                                   Background="#F5F5F5"
-                                   Padding="10"
-                                   FontFamily="Consolas"/>
+                        <Border Background="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"
+                                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="12">
+                            <TextBlock Text="{Binding SelectedResult.Result.LlmAnalysis}"
+                                       TextWrapping="Wrap"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -168,10 +264,12 @@
 
         <!-- Status Bar -->
         <Border Grid.Row="2"
-                Background="#EEEEEE"
-                Padding="10"
-                CornerRadius="5"
-                Margin="0,10,0,0">
+                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                BorderThickness="1"
+                Padding="12"
+                CornerRadius="6"
+                Margin="0,15,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -181,19 +279,17 @@
 
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
+                           Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                           FontSize="13"
                            VerticalAlignment="Center"/>
 
                 <ProgressBar Grid.Column="2"
-                             Width="150"
-                             Height="20"
+                             Width="180"
+                             Height="22"
                              IsIndeterminate="True"
-                             Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                             Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
+                             Foreground="{DynamicResource {x:Static SystemColors.HotTrackBrushKey}}"/>
             </Grid>
         </Border>
     </Grid>
-
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
-    </Window.Resources>
 </Window>
